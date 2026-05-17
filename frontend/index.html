@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Pantry — Gestisci la tua dispensa</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* ========================================================
+           LOGIN PAGE — design moderno e minimalista
+           ======================================================== */
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(28px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+        @keyframes ripple {
+            to { transform: scale(4); opacity: 0; }
+        }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 4px 20px rgba(22,163,74,0.35); }
+            50%       { box-shadow: 0 4px 32px rgba(22,163,74,0.65); }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50%       { transform: translateY(-8px); }
+        }
+        @keyframes shimmer {
+            0%   { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+
+        /* ---- Reset pagina ---- */
+        .auth-page {
+            display: flex;
+            min-height: 100vh;
+            height: 100vh;
+            align-items: stretch;
+            justify-content: flex-start;
+            padding: 0;
+            background: #f0fdf4;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        }
+
+        /* ---- Pannello sinistro: branding ---- */
+        .auth-branding {
+            flex: 1;
+            background: linear-gradient(150deg, #0f4c28 0%, #1a7a3e 45%, #2da855 80%, #3ec866 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 3.5rem 4rem;
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 0.8s ease both;
+        }
+
+        /* Blob decorativi */
+        .auth-branding::before {
+            content: '';
+            position: absolute;
+            width: 500px; height: 500px;
+            top: -160px; right: -160px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+        }
+        .auth-branding::after {
+            content: '';
+            position: absolute;
+            width: 320px; height: 320px;
+            bottom: -80px; left: -100px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%);
+        }
+
+        /* Pallino decorativo in mezzo */
+        .brand-blob {
+            position: absolute;
+            width: 200px; height: 200px;
+            top: 50%; left: 30%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 70%);
+        }
+
+        .brand-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Logo */
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 1.1rem;
+            margin-bottom: 3rem;
+        }
+        .brand-logo .icon {
+            font-size: 2.6rem;
+            background: rgba(255,255,255,0.18);
+            border-radius: 22px;
+            width: 72px; height: 72px;
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.25);
+            animation: float 4s ease-in-out infinite;
+        }
+        .brand-logo h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+        .brand-logo p {
+            color: rgba(255,255,255,0.65);
+            font-size: 0.95rem;
+            margin-top: 0.2rem;
+        }
+
+        .brand-tagline {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.3;
+            margin-bottom: 0.9rem;
+            letter-spacing: -0.01em;
+        }
+        .brand-sub {
+            color: rgba(255,255,255,0.72);
+            font-size: 1.05rem;
+            line-height: 1.65;
+            margin-bottom: 2.75rem;
+        }
+
+        /* Feature list */
+        .features { display: flex; flex-direction: column; gap: 0.85rem; }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.13);
+            border-radius: 18px;
+            padding: 1rem 1.4rem;
+            backdrop-filter: blur(6px);
+            transition: background 0.25s, transform 0.25s;
+            cursor: default;
+        }
+        .feature-item:hover {
+            background: rgba(255,255,255,0.14);
+            transform: translateX(4px);
+        }
+        .feature-icon {
+            font-size: 1.7rem;
+            flex-shrink: 0;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.15));
+        }
+        .feature-text h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.15rem;
+        }
+        .feature-text p {
+            font-size: 0.86rem;
+            color: rgba(255,255,255,0.62);
+            line-height: 1.45;
+        }
+
+        /* ---- Pannello destro: form ---- */
+        .auth-panel {
+            width: 580px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: #fff;
+            padding: 3.5rem 3.75rem;
+            box-shadow: -8px 0 48px rgba(0,0,0,0.06);
+            overflow-y: auto;
+            animation: slideUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        /* Header pannello */
+        .panel-header {
+            margin-bottom: 2.25rem;
+        }
+        .panel-header h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #111827;
+            margin-bottom: 0.4rem;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+        }
+        .panel-header p {
+            color: #6b7280;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        /* ---- Tab pillola ---- */
+        .auth-tabs {
+            display: flex;
+            background: #f3f4f6;
+            border-radius: 14px;
+            padding: 5px;
+            margin-bottom: 2rem;
+            gap: 4px;
+        }
+        .auth-tab {
+            flex: 1;
+            padding: 0.65rem 1rem;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.97rem;
+            font-weight: 600;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .auth-tab:hover:not(.active) {
+            color: #374151;
+            background: rgba(255,255,255,0.6);
+        }
+        .auth-tab.active {
+            background: #fff;
+            color: var(--primary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+        }
+
+        /* ---- Form generico ---- */
+        .hidden { display: none !important; }
+
+        .auth-form {
+            animation: slideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        /* Label più grandi */
+        .auth-panel .form-label {
+            font-size: 0.97rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Input più grandi e arrotondati */
+        .auth-panel .form-control {
+            height: 54px;
+            padding: 0 1.1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 14px;
+            font-size: 1.02rem;
+            color: #111827;
+            background: #fafafa;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+            outline: none;
+        }
+        .auth-panel .form-control:focus {
+            border-color: #16a34a;
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(22,163,74,0.1);
+        }
+        .auth-panel .form-control::placeholder {
+            color: #9ca3af;
+            font-size: 0.97rem;
+        }
+
+        /* Input con icona — padding sinistra */
+        .input-icon-wrap { position: relative; }
+        .input-icon-wrap .form-control { padding-left: 3rem; }
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.1rem;
+            pointer-events: none;
+            line-height: 1;
+        }
+
+        /* Errore form */
+        .form-error {
+            background: #fef2f2;
+            border: 1.5px solid #fca5a5;
+            border-radius: 12px;
+            color: #dc2626;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            animation: slideUp 0.25s ease both;
+        }
+        .form-error::before { content: '⚠️'; font-size: 1.05rem; flex-shrink: 0; }
+
+        /* Divisore "oppure" */
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1.4rem 0;
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+        .auth-divider::before,
+        .auth-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e5e7eb;
+        }
+
+        /* ---- Pulsanti con animazioni ---- */
+        .auth-btn-primary {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            height: 54px;
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 0.01em;
+            margin-top: 0.5rem;
+            transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+                        box-shadow 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+                        background 0.18s;
+            box-shadow: 0 4px 14px rgba(22,163,74,0.35);
+        }
+        .auth-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(22,163,74,0.45);
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+        }
+        .auth-btn-primary:active {
+            transform: translateY(0px) scale(0.98);
+            box-shadow: 0 2px 8px rgba(22,163,74,0.3);
+        }
+        .auth-btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Ripple effect */
+        .ripple-circle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.35);
+            width: 80px; height: 80px;
+            margin-top: -40px; margin-left: -40px;
+            animation: ripple 0.6s linear;
+            pointer-events: none;
+        }
+
+        /* Testo nel bottone con freccia animata */
+        .auth-btn-primary .btn-text { display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .auth-btn-primary .btn-arrow {
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+        .auth-btn-primary:hover .btn-arrow { transform: translateX(4px); }
+
+        /* Loading spinner nel bottone */
+        .auth-btn-primary.loading .btn-text { display: none; }
+        .auth-btn-primary .btn-spinner {
+            display: none;
+            width: 22px; height: 22px;
+            border: 3px solid rgba(255,255,255,0.35);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        .auth-btn-primary.loading .btn-spinner { display: block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Link tab switch */
+        .switch-link {
+            text-align: center;
+            font-size: 0.95rem;
+            color: #6b7280;
+        }
+        .switch-link a {
+            font-weight: 700;
+            color: #16a34a;
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+        .switch-link a:hover { color: #15803d; text-decoration: underline; }
+
+        /* Hint e strength */
+        .form-hint {
+            font-size: 0.82rem;
+            color: #9ca3af;
+            margin-top: 0.3rem;
+        }
+        .password-strength {
+            height: 5px;
+            border-radius: 3px;
+            margin-top: 0.5rem;
+            background: #e5e7eb;
+            overflow: hidden;
+        }
+        .strength-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background 0.35s;
+            width: 0%;
+        }
+        .strength-fill.weak   { background: #ef4444; width: 33%; }
+        .strength-fill.medium { background: #f59e0b; width: 66%; }
+        .strength-fill.strong { background: #22c55e; width: 100%; }
+        .strength-label {
+            font-size: 0.8rem;
+            margin-top: 0.3rem;
+            color: #6b7280;
+            min-height: 1.2em;
+        }
+
+        /* Footer */
+        .auth-footer {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.82rem;
+            color: #9ca3af;
+        }
+
+        /* ---- Pulsante tema (fisso in alto a destra) ---- */
+        .theme-toggle {
+            position: fixed;
+            top: 1.25rem;
+            right: 1.25rem;
+            z-index: 9999;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.35);
+            background: rgba(255,255,255,0.18);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            cursor: pointer;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.14);
+            transition: transform 0.25s cubic-bezier(0.4,0,0.2,1),
+                        background 0.25s, border-color 0.25s,
+                        box-shadow 0.25s;
+        }
+        .theme-toggle:hover {
+            transform: scale(1.12) rotate(18deg);
+            background: rgba(255,255,255,0.28);
+            box-shadow: 0 6px 22px rgba(0,0,0,0.2);
+        }
+        .theme-toggle:active {
+            transform: scale(0.95) rotate(18deg);
+        }
+        #theme-icon {
+            display: block;
+            transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+            line-height: 1;
+        }
+
+        /* ============================================================
+           DARK MODE
+           ============================================================ */
+        @keyframes themeFade {
+            from { opacity: 0.7; }
+            to   { opacity: 1; }
+        }
+
+        [data-theme="dark"] .auth-page {
+            background: #0d1626;
+            animation: themeFade 0.3s ease;
+        }
+
+        /* Pannello form in dark */
+        [data-theme="dark"] .auth-panel {
+            background: #182438;
+            box-shadow: -8px 0 48px rgba(0,0,0,0.5);
+        }
+        [data-theme="dark"] .panel-header h2 {
+            color: #e6edf3;
+        }
+        [data-theme="dark"] .panel-header p {
+            color: #8b949e;
+        }
+
+        /* Tab in dark */
+        [data-theme="dark"] .auth-tabs {
+            background: #0d1626;
+        }
+        [data-theme="dark"] .auth-tab {
+            color: #8b949e;
+        }
+        [data-theme="dark"] .auth-tab:hover:not(.active) {
+            background: rgba(255,255,255,0.05);
+            color: #c9d1d9;
+        }
+        [data-theme="dark"] .auth-tab.active {
+            background: #2d3d58;
+            color: #3fb950;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        }
+
+        /* Form label e input in dark */
+        [data-theme="dark"] .auth-panel .form-label {
+            color: #c9d1d9;
+        }
+        [data-theme="dark"] .auth-panel .form-control {
+            background: #0d1626;
+            border-color: #2d3d58;
+            color: #e6edf3;
+        }
+        [data-theme="dark"] .auth-panel .form-control:focus {
+            border-color: #3fb950;
+            background: #0d1626;
+            box-shadow: 0 0 0 4px rgba(63,185,80,0.12);
+        }
+        [data-theme="dark"] .auth-panel .form-control::placeholder {
+            color: #484f58;
+        }
+
+        /* Divisore e link in dark */
+        [data-theme="dark"] .auth-divider {
+            color: #484f58;
+        }
+        [data-theme="dark"] .auth-divider::before,
+        [data-theme="dark"] .auth-divider::after {
+            background: #2d3d58;
+        }
+        [data-theme="dark"] .switch-link { color: #8b949e; }
+        [data-theme="dark"] .switch-link a { color: #3fb950; }
+        [data-theme="dark"] .switch-link a:hover { color: #56d364; }
+
+        /* Hint, strength, footer in dark */
+        [data-theme="dark"] .form-hint { color: #6e7681; }
+        [data-theme="dark"] .strength-label { color: #8b949e; }
+        [data-theme="dark"] .password-strength { background: #2d3d58; }
+        [data-theme="dark"] .auth-footer { color: #6e7681; }
+
+        /* Errore in dark */
+        [data-theme="dark"] .form-error {
+            background: #2d1515;
+            border-color: #7f1d1d;
+            color: #fca5a5;
+        }
+
+        /* Toggle button in dark */
+        [data-theme="dark"] .theme-toggle {
+            background: rgba(22,27,34,0.9);
+            border-color: #2d3d58;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+        }
+        [data-theme="dark"] .theme-toggle:hover {
+            background: rgba(33,38,45,0.95);
+        }
+
+        /* Transizioni fluide al cambio tema */
+        .auth-panel,
+        .auth-tabs,
+        .auth-tab,
+        .auth-panel .form-control,
+        .auth-panel .form-label,
+        .panel-header h2,
+        .panel-header p,
+        .auth-divider,
+        .switch-link,
+        .auth-footer,
+        .form-hint {
+            transition: background 0.3s ease, color 0.3s ease,
+                        border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* ---- Responsive ---- */
+        @media (max-width: 960px) {
+            .auth-branding { display: none; }
+            .auth-panel {
+                width: 100%;
+                padding: 2.5rem 1.75rem;
+                box-shadow: none;
+                justify-content: flex-start;
+                padding-top: 5rem;
+            }
+        }
+        @media (max-width: 480px) {
+            .auth-panel { padding: 2rem 1.25rem; padding-top: 4.5rem; }
+            .panel-header h2 { font-size: 1.7rem; }
+            .theme-toggle { top: 0.75rem; right: 0.75rem; width: 44px; height: 44px; }
+        }
+    </style>
+    <!-- Applica tema prima del render per evitare flash -->
+    <script>
+        (function() {
+            const t = localStorage.getItem('sp-theme');
+            if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        })();
+    </script>
+</head>
+<body class="auth-page">
+
+    <!-- ===== Toggle tema chiaro/scuro ===== -->
+    <button class="theme-toggle" id="theme-toggle" title="Cambia tema">
+        <span id="theme-icon">🌙</span>
+    </button>
+
+    <!-- ===== Pannello sinistro: branding ===== -->
+    <section class="auth-branding">
+        <div class="brand-blob"></div>
+        <div class="brand-content">
+
+            <div class="brand-logo">
+                <div class="icon">🥦</div>
+                <div>
+                    <h1>Smart Pantry</h1>
+                    <p>La tua dispensa intelligente</p>
+                </div>
+            </div>
+
+            <p class="brand-tagline">Gestisci gli alimenti,<br>riduci gli sprechi.</p>
+            <p class="brand-sub">
+                Tieni traccia di tutto quello che hai in casa, ricevi avvisi
+                prima che i prodotti scadano e scopri cosa cucinare stasera.
+            </p>
+
+            <div class="features">
+                <div class="feature-item">
+                    <span class="feature-icon">📦</span>
+                    <div class="feature-text">
+                        <h3>Dispensa digitale</h3>
+                        <p>Aggiungi prodotti manualmente o scansionando il barcode.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🍽️</span>
+                    <div class="feature-text">
+                        <h3>Ricette su misura</h3>
+                        <p>Suggerimenti basati su quello che hai in dispensa.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">📷</span>
+                    <div class="feature-text">
+                        <h3>Scanner barcode</h3>
+                        <p>Valori nutrizionali trovati in automatico via OpenFoodFacts.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ===== Pannello destro: form ===== -->
+    <section class="auth-panel">
+
+        <div class="panel-header">
+            <h2 id="panel-title">Bentornato 👋</h2>
+            <p id="panel-sub">Accedi al tuo account per gestire la dispensa.</p>
+        </div>
+
+        <!-- Tab: Accedi / Registrati -->
+        <div class="auth-tabs">
+            <button class="auth-tab active" data-tab="login">Accedi</button>
+            <button class="auth-tab" data-tab="register">Registrati</button>
+        </div>
+
+        <!-- ===== Form Login ===== -->
+        <form id="form-login" class="auth-form">
+            <div id="error-login" class="form-error hidden"></div>
+
+            <div class="form-group">
+                <label class="form-label" for="login-email">Email o Username</label>
+                <div class="input-icon-wrap">
+                    <span class="input-icon">👤</span>
+                    <input class="form-control" type="text" id="login-email"
+                           placeholder="mario@esempio.it" autocomplete="email" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="login-password">Password</label>
+                <div class="input-icon-wrap">
+                    <span class="input-icon">🔒</span>
+                    <input class="form-control" type="password" id="login-password"
+                           placeholder="La tua password" autocomplete="current-password" required>
+                </div>
+            </div>
+
+            <button type="submit" class="auth-btn-primary" id="btn-login-submit">
+                <span class="btn-text">Accedi <span class="btn-arrow">→</span></span>
+                <span class="btn-spinner"></span>
+            </button>
+
+            <div class="auth-divider">oppure</div>
+
+            <p class="switch-link">
+                Non hai un account?
+                <a href="#" onclick="switchTab('register'); return false;">Registrati gratis</a>
+            </p>
+        </form>
+
+        <!-- ===== Form Registrazione ===== -->
+        <form id="form-register" class="auth-form hidden">
+            <div id="error-register" class="form-error hidden"></div>
+
+            <div class="form-group">
+                <label class="form-label" for="reg-username">Username</label>
+                <div class="input-icon-wrap">
+                    <span class="input-icon">👤</span>
+                    <input class="form-control" type="text" id="reg-username"
+                           placeholder="mario_rossi" autocomplete="username"
+                           required minlength="3" maxlength="50">
+                </div>
+                <div class="form-hint">Da 3 a 50 caratteri, senza spazi</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="reg-email">Email</label>
+                <div class="input-icon-wrap">
+                    <span class="input-icon">📧</span>
+                    <input class="form-control" type="email" id="reg-email"
+                           placeholder="mario@esempio.it" autocomplete="email" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="reg-password">Password</label>
+                <div class="input-icon-wrap">
+                    <span class="input-icon">🔒</span>
+                    <input class="form-control" type="password" id="reg-password"
+                           placeholder="Minimo 6 caratteri" autocomplete="new-password"
+                           required minlength="6" oninput="checkPasswordStrength(this.value)">
+                </div>
+                <div class="password-strength">
+                    <div class="strength-fill" id="strength-fill"></div>
+                </div>
+                <div class="strength-label" id="strength-label"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="reg-confirm">Conferma password</label>
+                <div class="input-icon-wrap">
+                    <span class="input-icon">🔒</span>
+                    <input class="form-control" type="password" id="reg-confirm"
+                           placeholder="Ripeti la password" autocomplete="new-password" required>
+                </div>
+            </div>
+
+            <button type="submit" class="auth-btn-primary" id="btn-register-submit">
+                <span class="btn-text">Crea account <span class="btn-arrow">→</span></span>
+                <span class="btn-spinner"></span>
+            </button>
+
+            <div class="auth-divider">oppure</div>
+
+            <p class="switch-link">
+                Hai già un account?
+                <a href="#" onclick="switchTab('login'); return false;">Accedi</a>
+            </p>
+        </form>
+
+        <div class="auth-footer-credit">
+            Progetto scolastico ITTS Vito Volterra
+            <span class="footer-sep">—</span>
+            Realizzato da Morsli &amp; Katia
+        </div>
+    </section>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/theme.js"></script>
+<script>
+    /* ---- Testi pannello per tab ---- */
+    const panelTitles = {
+        login:    ['Bentornato 👋',       'Accedi al tuo account per gestire la dispensa.'],
+        register: ['Crea il tuo account', 'Registrati gratis e inizia subito a gestire la dispensa.']
+    };
+
+    function switchTab(tab) {
+        document.querySelectorAll('.auth-tab').forEach(t =>
+            t.classList.toggle('active', t.dataset.tab === tab));
+        document.querySelectorAll('.auth-form').forEach(f => f.classList.add('hidden'));
+        const form = document.getElementById(`form-${tab}`);
+        if (form) {
+            form.classList.remove('hidden');
+            // Restart animation
+            form.style.animation = 'none';
+            form.offsetHeight; // reflow
+            form.style.animation = '';
+        }
+        document.getElementById('panel-title').textContent = panelTitles[tab][0];
+        document.getElementById('panel-sub').textContent   = panelTitles[tab][1];
+    }
+
+    document.querySelectorAll('.auth-tab').forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    });
+
+    /* ---- Ripple sui pulsanti ---- */
+    document.querySelectorAll('.auth-btn-primary').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            const rect   = this.getBoundingClientRect();
+            const circle = document.createElement('span');
+            circle.className = 'ripple-circle';
+            circle.style.left = (e.clientX - rect.left) + 'px';
+            circle.style.top  = (e.clientY - rect.top)  + 'px';
+            this.appendChild(circle);
+            circle.addEventListener('animationend', () => circle.remove());
+        });
+    });
+
+    /* ---- Loading state dei pulsanti (override auth.js) ---- */
+    function setButtonLoading(btn, loading) {
+        if (!btn) return;
+        btn.disabled = loading;
+        if (loading) {
+            btn.classList.add('loading');
+        } else {
+            btn.classList.remove('loading');
+        }
+    }
+
+    /* ---- Indicatore forza password ---- */
+    function checkPasswordStrength(val) {
+        const fill  = document.getElementById('strength-fill');
+        const label = document.getElementById('strength-label');
+        if (!fill || !label) return;
+        if (!val) {
+            fill.className = 'strength-fill';
+            label.textContent = '';
+            return;
+        }
+        const strong = val.length >= 10 && /[A-Z]/.test(val) && /[0-9]/.test(val) && /[^A-Za-z0-9]/.test(val);
+        const medium = val.length >= 6  && (/[A-Z]/.test(val) || /[0-9]/.test(val));
+        if (strong) {
+            fill.className = 'strength-fill strong';
+            label.textContent = '✓ Password forte';
+            label.style.color = '#16a34a';
+        } else if (medium) {
+            fill.className = 'strength-fill medium';
+            label.textContent = 'Password media — aggiungi numeri o simboli';
+            label.style.color = '#d97706';
+        } else {
+            fill.className = 'strength-fill weak';
+            label.textContent = 'Password debole';
+            label.style.color = '#dc2626';
+        }
+    }
+</script>
+</body>
+</html>

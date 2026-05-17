@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Pantry — Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script>(function(){var t=localStorage.getItem("sp-theme");if(t)document.documentElement.setAttribute("data-theme",t);})();</script>
+    <style>
+        /* ---- Sezione ingredienti compatta ---- */
+        .ingredient-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: var(--primary-bg);
+            border: 1px solid rgba(45,138,78,0.18);
+            border-radius: 20px;
+            padding: 0.3rem 0.75rem;
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--primary-dark);
+            transition: background 0.15s;
+        }
+        .ingredient-chip.expiring {
+            background: var(--warning-bg);
+            border-color: rgba(255,167,38,0.3);
+            color: #7c4a00;
+        }
+        .ingredient-chip.expired {
+            background: var(--danger-bg);
+            border-color: rgba(239,83,80,0.3);
+            color: #a00;
+            text-decoration: line-through;
+            opacity: 0.75;
+        }
+
+        /* ---- Card ricetta compatta (dashboard preview) ---- */
+        .recipe-mini {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.85rem;
+            padding: 0.9rem 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .recipe-mini:last-child { border-bottom: none; }
+        .recipe-mini-img {
+            width: 62px;
+            height: 62px;
+            border-radius: 10px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: var(--primary-bg);
+        }
+        .recipe-mini-placeholder {
+            width: 62px;
+            height: 62px;
+            border-radius: 10px;
+            background: var(--primary-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            flex-shrink: 0;
+        }
+        .recipe-mini-info { flex: 1; min-width: 0; }
+        .recipe-mini-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 0.3rem;
+        }
+        .recipe-mini-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* ---- Item lista scadenza ---- */
+        .expiry-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.7rem 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .expiry-row:last-child { border-bottom: none; }
+        .expiry-emoji { font-size: 1.4rem; flex-shrink: 0; }
+        .expiry-info { flex: 1; min-width: 0; }
+        .expiry-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .expiry-date { font-size: 0.78rem; color: var(--text-light); }
+        .expiry-badge { flex-shrink: 0; }
+
+        /* ---- Layout dashboard 3 colonne ---- */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 340px;
+            gap: 1.25rem;
+        }
+
+        @media (max-width: 1200px) {
+            .dashboard-grid { grid-template-columns: 1fr 1fr; }
+            .dashboard-grid .col-recipes { grid-column: 1 / -1; }
+        }
+        @media (max-width: 768px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+            #charts-row { grid-template-columns: 1fr !important; }
+        }
+
+        .chips-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+            max-height: 120px;
+            overflow: hidden;
+        }
+        .chips-wrap.expanded { max-height: none; }
+        .show-more-chips {
+            background: none;
+            border: 1px dashed var(--border);
+            border-radius: 20px;
+            padding: 0.3rem 0.75rem;
+            font-size: 0.82rem;
+            color: var(--text-light);
+            cursor: pointer;
+        }
+        .show-more-chips:hover { border-color: var(--primary); color: var(--primary); }
+    </style>
+</head>
+<body>
+
+<nav class="drawer" id="drawer">
+    <div class="drawer-header">
+        <div class="drawer-brand">
+            <div class="brand-mark"></div>
+            <span>Smart Pantry</span>
+        </div>
+        <button class="drawer-close" id="drawer-close">&times;</button>
+    </div>
+    <div class="drawer-nav">
+        <a href="dashboard.html" class="nav-link active">Dashboard</a>
+        <a href="pantry.html"    class="nav-link">Dispensa</a>
+        <a href="scanner.html"   class="nav-link">Aggiungi prodotto</a>
+        <a href="recipes.html"   class="nav-link">Ricette</a>
+        <a href="meals.html"     class="nav-link">Piano pasti</a>
+        <a href="supermercati.html" class="nav-link">Supermercati</a>
+        <a href="gruppo.html"       class="nav-link">Gruppo</a>
+    </div>
+    <div class="drawer-footer">
+        <div class="user-chip">
+            <div class="user-avatar" id="sidebar-avatar">U</div>
+            <span class="user-name" id="sidebar-username">Utente</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="btn-logout">Esci</button>
+    </div>
+</nav>
+<div class="drawer-overlay" id="drawer-overlay"></div>
+
+<div class="app">
+    <header class="topbar">
+        <button class="hamburger" id="hamburger" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+        <h1 class="page-title">Dashboard</h1>
+        <div class="topbar-end"><button class="theme-toggle-app" id="theme-toggle" title="Tema"><span id="theme-icon">🥑</span></button></div>
+    </header>
+
+        <main class="page-content">
+
+            <!-- Benvenuto + data -->
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; flex-wrap:wrap; gap:0.5rem;">
+                <div>
+                    <h2 style="font-size:1.35rem; font-weight:800;">Ciao, <span id="welcome-name">…</span>!</h2>
+                    <p style="color:var(--text-light); font-size:0.88rem;" id="dashboard-date"></p>
+                </div>
+                <a href="pantry.html" class="btn btn-primary btn-sm">Vai alla dispensa</a>
+            </div>
+
+            <!-- Statistiche -->
+            <div class="stats-grid" style="margin-bottom:1.5rem;">
+                <div class="stat-card">
+                    <div class="stat-orb green"></div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="stat-total">—</div>
+                        <div class="stat-label">Prodotti in dispensa</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-orb blue"></div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="stat-ok">—</div>
+                        <div class="stat-label">Prodotti OK</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-orb amber"></div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="stat-expiring">—</div>
+                        <div class="stat-label">In scadenza (7 gg)</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-orb red"></div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="stat-expired">—</div>
+                        <div class="stat-label">Scaduti</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Griglia principale -->
+            <div class="dashboard-grid">
+
+                <!-- Colonna 1: Ingredienti in dispensa -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Ingredienti in dispensa</span>
+                        <a href="pantry.html" style="font-size:0.8rem; color:var(--primary);">Gestisci →</a>
+                    </div>
+                    <div class="card-body">
+                        <div id="ingredients-loading" class="loading" style="padding:1.5rem;">
+                            <div class="spinner"></div>
+                        </div>
+                        <div id="ingredients-wrap" style="display:none;">
+                            <div class="chips-wrap" id="ingredients-chips"></div>
+                            <button class="show-more-chips" id="btn-more-chips" style="display:none; margin-top:0.5rem;">
+                                Mostra tutti
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Colonna 2: In scadenza -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">In scadenza</span>
+                        <a href="pantry.html#expiring" style="font-size:0.8rem; color:var(--primary);">Tutti →</a>
+                    </div>
+                    <div class="card-body" style="padding: 0.5rem 1.25rem;">
+                        <div id="expiring-loading" class="loading" style="padding:1.5rem;">
+                            <div class="spinner"></div>
+                        </div>
+                        <div id="expiring-list"></div>
+                    </div>
+                </div>
+
+                <!-- Colonna 3: Ricette consigliate preview -->
+                <div class="card col-recipes">
+                    <div class="card-header">
+                        <span class="card-title">Ricette per te</span>
+                        <a href="recipes.html" style="font-size:0.8rem; color:var(--primary);">Vedi tutte →</a>
+                    </div>
+                    <div class="card-body" style="padding: 0.5rem 1.25rem;">
+                        <div id="recipes-loading" class="loading" style="padding:1.5rem;">
+                            <div class="spinner"></div>
+                        </div>
+                        <div id="recipes-preview"></div>
+                        <div id="recipes-preview-more" style="display:none; margin-top:1rem;">
+                            <a href="recipes.html" class="btn btn-outline btn-sm btn-full">Vedi tutte le ricette</a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Grafici statistiche -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin-top:1.25rem;" id="charts-row">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Categorie in dispensa</span>
+                    </div>
+                    <div class="card-body" style="display:flex; align-items:center; justify-content:center; min-height:220px;">
+                        <div id="chart-cat-loading" class="loading" style="padding:1.5rem;"><div class="spinner"></div></div>
+                        <canvas id="chart-categories" style="display:none; max-height:220px;"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Nutrienti medi (per 100g)</span>
+                    </div>
+                    <div class="card-body" style="display:flex; align-items:center; justify-content:center; min-height:220px;">
+                        <div id="chart-nut-loading" class="loading" style="padding:1.5rem;"><div class="spinner"></div></div>
+                        <div id="chart-nut-empty" style="display:none; text-align:center; color:var(--text-light); font-size:0.9rem; padding:1rem;">
+                            Nessun dato nutrizionale disponibile.<br>
+                            <small>Aggiungi prodotti tramite scanner per vedere i nutrienti.</small>
+                        </div>
+                        <canvas id="chart-nutrition" style="display:none; max-height:220px;"></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    <footer class="site-footer">
+        Progetto scolastico ITTS Vito Volterra
+        <span class="footer-sep">—</span>
+        Realizzato da Morsli &amp; Katia
+    </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="js/api.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/theme.js"></script>
+</body>
+</html>

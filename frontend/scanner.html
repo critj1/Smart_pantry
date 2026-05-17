@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Pantry — Aggiungi prodotto</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script>(function(){var t=localStorage.getItem("sp-theme");if(t)document.documentElement.setAttribute("data-theme",t);})();</script>
+    <style>
+        .hidden { display: none !important; }
+
+        /* Layout 2 colonne per desktop */
+        .scanner-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            align-items: stretch;
+        }
+        .scanner-layout .card {
+            display: flex;
+            flex-direction: column;
+        }
+        .scanner-layout .card-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        @media (max-width: 900px) {
+            .scanner-layout { grid-template-columns: 1fr; }
+        }
+
+        /* Placeholder fotocamera */
+        .cam-placeholder {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            padding: 2rem 1rem;
+            background: var(--green-50);
+            border-radius: var(--radius);
+            border: 2px dashed var(--border);
+            margin-bottom: 1rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.88rem;
+        }
+        .cam-placeholder-icon { font-size: 3rem; }
+        [data-theme="dark"] .cam-placeholder { background: #0d1f12; border-color: #2d3d58; }
+
+        /* Barcode tips */
+        .barcode-tips {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+        }
+        .barcode-tip {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.7rem;
+            font-size: 0.84rem;
+            color: var(--text-light);
+            padding: 0.6rem 0.75rem;
+            background: var(--green-50);
+            border-radius: var(--radius-sm);
+        }
+        .barcode-tip-icon { font-size: 1.1rem; flex-shrink: 0; }
+        [data-theme="dark"] .barcode-tip { background: #0d1f12; }
+
+        /* Tabs stile pillola */
+        .scanner-tabs {
+            display: flex;
+            background: rgba(255,255,255,0.5);
+            border-radius: var(--radius-full);
+            padding: 5px;
+            gap: 4px;
+            margin-bottom: 1.75rem;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+            border: 1px solid rgba(255,255,255,0.8);
+        }
+        .scanner-tabs::-webkit-scrollbar { display: none; }
+        .scanner-tab {
+            padding: 0.55rem 1.4rem;
+            background: transparent;
+            border: none;
+            border-radius: var(--radius-full);
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all var(--transition-med);
+        }
+        .scanner-tab.active {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(22,163,74,0.35);
+        }
+        [data-theme="dark"] .scanner-tabs { background: #182438; border-color: #2d3d58; }
+
+        /* Hero intro */
+        .page-intro {
+            margin-bottom: 1.75rem;
+        }
+        .page-intro h2 {
+            font-size: 1.65rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 0.35rem;
+        }
+        .page-intro p {
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+
+        /* Sezione senza card — testo diretto */
+        .scan-section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid rgba(34,197,94,0.25);
+        }
+    </style>
+</head>
+<body>
+
+<nav class="drawer" id="drawer">
+    <div class="drawer-header">
+        <div class="drawer-brand">
+            <div class="brand-mark"></div>
+            <span>Smart Pantry</span>
+        </div>
+        <button class="drawer-close" id="drawer-close">&times;</button>
+    </div>
+    <div class="drawer-nav">
+        <a href="dashboard.html" class="nav-link">Dashboard</a>
+        <a href="pantry.html" class="nav-link">Dispensa</a>
+        <a href="scanner.html" class="nav-link active">Aggiungi prodotto</a>
+        <a href="recipes.html" class="nav-link">Ricette</a>
+        <a href="meals.html"   class="nav-link">Piano pasti</a>
+        <a href="supermercati.html" class="nav-link">Supermercati</a>
+        <a href="gruppo.html"       class="nav-link">Gruppo</a>
+    </div>
+    <div class="drawer-footer">
+        <div class="user-chip">
+            <div class="user-avatar" id="sidebar-avatar">U</div>
+            <span class="user-name" id="sidebar-username">Utente</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="btn-logout">Esci</button>
+    </div>
+</nav>
+<div class="drawer-overlay" id="drawer-overlay"></div>
+
+<div class="app">
+    <header class="topbar">
+        <button class="hamburger" id="hamburger" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+        <h1 class="page-title">Aggiungi prodotto</h1>
+        <div class="topbar-end">
+            <button class="theme-toggle-app" id="theme-toggle" title="Tema"><span id="theme-icon">🥑</span></button></div>
+    </header>
+
+    <main class="page-content">
+
+        <!-- Intro -->
+        <div class="page-intro">
+            <h2>Aggiungi un prodotto</h2>
+            <p>Scansiona il barcode con la fotocamera oppure cerca il prodotto per nome su OpenFoodFacts.</p>
+        </div>
+
+        <!-- Tab -->
+        <div class="scanner-tabs">
+            <button class="scanner-tab active" data-tab="barcode">Scansiona barcode</button>
+            <button class="scanner-tab" data-tab="name">Cerca per nome</button>
+        </div>
+
+        <!-- ===== SEZIONE BARCODE ===== -->
+        <div id="section-barcode">
+            <div class="scanner-layout">
+
+                <!-- Colonna sinistra: fotocamera -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📷 Fotocamera</span>
+                    </div>
+                    <div class="card-body">
+                        <!-- Placeholder visivo (nascosto quando la cam è attiva) -->
+                        <div class="cam-placeholder" id="cam-placeholder">
+                            <div class="cam-placeholder-icon">📷</div>
+                            <strong style="color:var(--text); font-size:0.92rem;">Scansiona un barcode</strong>
+                            <span>Punta la fotocamera verso il codice a barre del prodotto e attendi il riconoscimento automatico.</span>
+                        </div>
+                        <div id="reader" style="margin-bottom:1rem; display:none;"></div>
+                        <p id="scan-status" style="color:var(--text-light); font-size:0.9rem; margin-bottom:1rem;"></p>
+                        <div id="scan-loading" class="loading hidden" style="padding:1rem;">
+                            <div class="spinner"></div><span>Ricerca prodotto…</span>
+                        </div>
+                        <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:auto;">
+                            <button id="btn-start-scan" class="btn btn-primary" style="flex:1;">Avvia fotocamera</button>
+                            <button id="btn-stop-scan" class="btn btn-secondary hidden">Ferma</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Colonna destra: barcode manuale -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">⌨️ Inserisci barcode manualmente</span>
+                    </div>
+                    <div class="card-body">
+                        <p style="font-size:0.88rem; color:var(--text-light); margin-bottom:1rem;">
+                            Inserisci il codice a barre del prodotto (EAN-13, EAN-8 o UPC) che trovi sulla confezione.
+                        </p>
+                        <form id="form-manual-barcode">
+                            <div class="barcode-input-row">
+                                <input class="form-control" type="text" id="manual-barcode"
+                                       placeholder="es. 8001234567890"
+                                       pattern="[0-9A-Za-z\-]{4,20}">
+                                <button type="submit" class="btn btn-primary">Cerca</button>
+                            </div>
+                        </form>
+                        <div class="barcode-tips">
+                            <div class="barcode-tip">
+                                <span class="barcode-tip-icon">🔢</span>
+                                <span>Il barcode è solitamente composto da <strong>8 o 13 cifre</strong> sotto le barre verticali.</span>
+                            </div>
+                            <div class="barcode-tip">
+                                <span class="barcode-tip-icon">🌍</span>
+                                <span>I prodotti italiani iniziano spesso con <strong>80</strong> o <strong>83</strong>.</span>
+                            </div>
+                            <div class="barcode-tip">
+                                <span class="barcode-tip-icon">📦</span>
+                                <span>Se il prodotto non viene trovato, puoi inserirlo <strong>manualmente</strong> dalla dispensa.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ===== SEZIONE CERCA PER NOME ===== -->
+        <div id="section-name" class="hidden">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Cerca prodotto per nome</span>
+                </div>
+                <div class="card-body">
+                    <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+                        <input class="form-control" type="text" id="name-search-input"
+                               placeholder="es. Nutella, Latte Granarolo, Pasta Barilla…"
+                               autocomplete="off">
+                        <button id="btn-name-search" class="btn btn-primary">Cerca</button>
+                    </div>
+
+                    <div id="name-search-loader" class="loading hidden" style="padding:1rem;">
+                        <div class="spinner"></div><span>Ricerca su OpenFoodFacts…</span>
+                    </div>
+
+                    <div id="name-search-results" class="product-search-results hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== RISULTATO PRODOTTO — sempre visibile, fuori da entrambe le sezioni ===== -->
+        <div id="result-section" class="hidden" style="margin-top:1.5rem;"></div>
+
+    </main>
+    <footer class="site-footer">
+        Progetto scolastico ITTS Vito Volterra
+        <span class="footer-sep">—</span>
+        Realizzato da Morsli &amp; Katia
+    </footer>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="js/api.js"></script>
+<script src="js/scanner.js"></script>
+<script src="js/theme.js"></script>
+</body>
+</html>

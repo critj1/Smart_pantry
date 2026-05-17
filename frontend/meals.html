@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Pantry — Piano pasti</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script>(function(){var t=localStorage.getItem("sp-theme");if(t)document.documentElement.setAttribute("data-theme",t);})();</script>
+    <style>
+        .hidden { display: none !important; }
+
+        /* Layout principale: calendario + pannello giorno */
+        .meals-layout {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 1.5rem;
+            align-items: start;
+        }
+        @media (max-width: 900px) {
+            .meals-layout { grid-template-columns: 1fr; }
+        }
+
+        /* ---- Calendario ---- */
+        .calendar-panel { padding: 0; }
+
+        .calendar-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid rgba(187,247,208,0.5);
+        }
+        .calendar-nav button {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: var(--primary);
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            transition: background var(--transition);
+        }
+        .calendar-nav button:hover { background: var(--primary-bg); }
+        .calendar-nav span {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            padding: 0.75rem;
+        }
+
+        .cal-header {
+            text-align: center;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            padding: 0.3rem 0;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .cal-day {
+            aspect-ratio: 1;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background var(--transition), transform var(--transition);
+            position: relative;
+            gap: 2px;
+        }
+        .cal-day:hover { background: rgba(22,163,74,0.10); }
+        .cal-day.today .cal-day-num {
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            width: 26px; height: 26px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .cal-day.selected { background: rgba(22,163,74,0.15); }
+        .cal-day.cal-empty { cursor: default; }
+
+        .cal-day-num {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text);
+            line-height: 1;
+        }
+
+        .cal-dots {
+            display: flex;
+            gap: 2px;
+        }
+        .cal-dot {
+            width: 5px; height: 5px;
+            border-radius: 50%;
+        }
+        .cal-dot-colazione { background: #f59e0b; }
+        .cal-dot-pranzo    { background: #22c55e; }
+        .cal-dot-cena      { background: #3b82f6; }
+
+        /* ---- Pannello giorno ---- */
+        .day-panel { min-height: 300px; }
+        .day-panel-header {
+            padding: 1.1rem 1.4rem;
+            border-bottom: 1px solid rgba(187,247,208,0.5);
+            background: linear-gradient(135deg, rgba(220,252,231,0.5), transparent);
+        }
+        .day-panel-header h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        /* ---- Slot pasto ---- */
+        .meal-slot {
+            padding: 1rem 1.4rem;
+            border-bottom: 1px solid rgba(187,247,208,0.35);
+        }
+        .meal-slot:last-child { border-bottom: none; }
+
+        .meal-slot-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        .meal-type-label {
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .meal-info { padding-top: 0.25rem; }
+        .meal-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--text);
+            margin-bottom: 0.25rem;
+        }
+        .meal-recipe {
+            font-size: 0.8rem;
+            color: var(--primary);
+            margin-bottom: 0.35rem;
+        }
+        .meal-notes {
+            font-size: 0.82rem;
+            color: var(--text-light);
+            margin-top: 0.3rem;
+            font-style: italic;
+        }
+        .meal-ingredients {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+            margin-top: 0.35rem;
+        }
+        .meal-ing-label {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            width: 100%;
+            margin-bottom: 0.2rem;
+        }
+        .meal-empty {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* ---- Modal pasto ---- */
+        .ingredient-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            align-items: center;
+        }
+        .ingredient-row .form-control { flex: 1; }
+
+        .modal-tabs {
+            display: flex;
+            background: var(--bg);
+            border-radius: var(--radius-full);
+            padding: 4px;
+            gap: 4px;
+            margin-bottom: 1.25rem;
+        }
+        .modal-tab {
+            flex: 1;
+            padding: 0.45rem 0.75rem;
+            border: none;
+            border-radius: var(--radius-full);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-light);
+            background: transparent;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+        .modal-tab.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: var(--shadow-sm);
+        }
+        [data-theme="dark"] .modal-tabs { background: #182438; }
+        [data-theme="dark"] .modal-tab.active { background: #2d3d58; }
+
+        .recipe-search-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.5rem 0.6rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: background var(--transition);
+            font-size: 0.88rem;
+        }
+        .recipe-search-item:hover { background: var(--primary-bg); }
+        .recipe-search-item img {
+            width: 40px; height: 40px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        /* ---- Lista spesa ---- */
+        .shopping-panel { margin-top: 1.5rem; }
+        .shopping-list-header { margin-bottom: 1rem; }
+        .shopping-list-header h3 { font-size: 1.1rem; font-weight: 700; }
+        .shopping-section { margin-bottom: 1.25rem; }
+        .shopping-section-title {
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .shopping-section-title.missing { color: var(--danger); }
+        .shopping-section-title.available { color: var(--success); }
+        .shopping-ul { list-style: none; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+        .shopping-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: var(--radius-full);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .shopping-item.missing  { background: var(--danger-bg);  color: #991b1b; }
+        .shopping-item.available { background: var(--success-bg); color: #14532d; }
+
+        /* ---- Sezione lista spesa in basso ---- */
+        .shopping-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid rgba(187,247,208,0.5);
+        }
+    </style>
+</head>
+<body>
+
+<nav class="drawer" id="drawer">
+    <div class="drawer-header">
+        <div class="drawer-brand">
+            <div class="brand-mark"></div>
+            <span>Smart Pantry</span>
+        </div>
+        <button class="drawer-close" id="drawer-close">&times;</button>
+    </div>
+    <div class="drawer-nav">
+        <a href="dashboard.html" class="nav-link">Dashboard</a>
+        <a href="pantry.html"    class="nav-link">Dispensa</a>
+        <a href="scanner.html"   class="nav-link">Aggiungi prodotto</a>
+        <a href="recipes.html"   class="nav-link">Ricette</a>
+        <a href="meals.html"     class="nav-link active">Piano pasti</a>
+        <a href="supermercati.html" class="nav-link">Supermercati</a>
+        <a href="gruppo.html"       class="nav-link">Gruppo</a>
+    </div>
+    <div class="drawer-footer">
+        <div class="user-chip">
+            <div class="user-avatar" id="sidebar-avatar">U</div>
+            <span class="user-name" id="sidebar-username">Utente</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="btn-logout">Esci</button>
+    </div>
+</nav>
+<div class="drawer-overlay" id="drawer-overlay"></div>
+
+<div class="app">
+    <header class="topbar">
+        <button class="hamburger" id="hamburger" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+        <h1 class="page-title">Piano pasti</h1>
+        <div class="topbar-end">
+            <button class="theme-toggle-app" id="theme-toggle" title="Tema"><span id="theme-icon">🥑</span></button>
+            <button class="btn btn-outline btn-sm" id="btn-today">Oggi</button>
+        </div>
+    </header>
+
+    <main class="page-content">
+
+        <!-- Intro -->
+        <div class="page-intro">
+            <h2>Organizza i tuoi pasti</h2>
+            <p>Clicca su un giorno del calendario per pianificare colazione, pranzo e cena.</p>
+        </div>
+
+        <!-- Layout 2 colonne -->
+        <div class="meals-layout">
+
+            <!-- Calendario -->
+            <div class="card calendar-panel">
+                <div class="calendar-nav">
+                    <button id="prev-month" aria-label="Mese precedente">&#8249;</button>
+                    <span id="month-label"></span>
+                    <button id="next-month" aria-label="Mese successivo">&#8250;</button>
+                </div>
+                <div class="calendar-grid" id="calendar-grid"></div>
+            </div>
+
+            <!-- Pannello giorno -->
+            <div class="card day-panel" id="day-panel">
+                <div id="day-panel-content" style="padding:2rem; text-align:center; color:var(--text-muted);">
+                    Seleziona un giorno dal calendario per vedere o aggiungere i pasti.
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Lista della spesa -->
+        <div class="shopping-controls">
+            <div>
+                <strong>Lista della spesa</strong>
+                <p style="font-size:0.82rem; color:var(--text-light); margin-top:0.1rem;">
+                    Genera la lista degli ingredienti mancanti per i pasti pianificati.
+                </p>
+            </div>
+            <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                <input type="date" class="form-control" id="shop-start" style="width:160px;">
+                <span style="color:var(--text-muted); font-size:0.85rem;">—</span>
+                <input type="date" class="form-control" id="shop-end"   style="width:160px;">
+                <button class="btn btn-primary" id="btn-generate-shopping">Genera lista</button>
+            </div>
+        </div>
+
+        <div id="shopping-panel" class="card hidden" style="padding:1.4rem; margin-top:1rem;"></div>
+
+    </main>
+    <footer class="site-footer">
+        Progetto scolastico ITTS Vito Volterra
+        <span class="footer-sep">—</span>
+        Realizzato da Morsli &amp; Katia
+    </footer>
+</div>
+
+<!-- ===== MODAL: Aggiungi / Modifica pasto ===== -->
+<div class="modal-overlay" id="modal-meal">
+    <div class="modal" style="max-width:540px;">
+        <div class="modal-header">
+            <span class="modal-title" id="modal-meal-title">Aggiungi pasto</span>
+            <button class="modal-close" onclick="closeModal('modal-meal')">×</button>
+        </div>
+        <div class="modal-body">
+            <form id="form-meal">
+                <input type="hidden" id="meal-date">
+                <input type="hidden" id="meal-type">
+
+                <!-- Nome pasto -->
+                <div class="form-group">
+                    <label class="form-label" for="meal-title-input">Nome del pasto *</label>
+                    <input class="form-control" type="text" id="meal-title-input"
+                           placeholder="es. Pasta al pomodoro, Yogurt con frutta…" required>
+                </div>
+
+                <!-- Tab: scrivi manualmente / cerca ricetta -->
+                <div class="modal-tabs">
+                    <button type="button" class="modal-tab active" data-mtab="manual">Scrivi ingredienti</button>
+                    <button type="button" class="modal-tab" data-mtab="recipe">Cerca ricetta</button>
+                </div>
+
+                <!-- Sezione ingredienti manuali -->
+                <div id="mtab-manual">
+                    <div class="form-group">
+                        <label class="form-label">Ingredienti</label>
+                        <div id="ingredients-list"></div>
+                        <button type="button" class="btn btn-secondary btn-sm" id="btn-ingredient-add"
+                                style="margin-top:0.4rem;">+ Aggiungi ingrediente</button>
+                    </div>
+                </div>
+
+                <!-- Sezione ricerca ricette -->
+                <div id="mtab-recipe" class="hidden">
+                    <div class="form-group">
+                        <label class="form-label">Cerca una ricetta</label>
+                        <div style="display:flex; gap:0.5rem;">
+                            <input class="form-control" type="text" id="recipe-search-input"
+                                   placeholder="es. risotto, pasta carbonara…">
+                            <button type="button" class="btn btn-primary" id="btn-recipe-search-modal">Cerca</button>
+                        </div>
+                    </div>
+                    <div id="recipe-search-results-modal" style="max-height:220px; overflow-y:auto;"></div>
+                </div>
+
+                <!-- Note -->
+                <div class="form-group">
+                    <label class="form-label" for="meal-notes-input">Note (opzionale)</label>
+                    <textarea class="form-control" id="meal-notes-input" rows="2"
+                              placeholder="Porzioni, varianti, link…"></textarea>
+                </div>
+
+                <div style="display:flex; gap:0.75rem; margin-top:0.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-meal')">Annulla</button>
+                    <button type="submit" class="btn btn-primary" id="btn-meal-save" style="flex:1;">Salva pasto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/meals.js"></script>
+<script src="js/theme.js"></script>
+</body>
+</html>

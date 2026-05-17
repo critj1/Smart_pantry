@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Pantry — La mia dispensa</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script>(function(){var t=localStorage.getItem("sp-theme");if(t)document.documentElement.setAttribute("data-theme",t);})();</script>
+    <style>
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<nav class="drawer" id="drawer">
+    <div class="drawer-header">
+        <div class="drawer-brand">
+            <div class="brand-mark"></div>
+            <span>Smart Pantry</span>
+        </div>
+        <button class="drawer-close" id="drawer-close">&times;</button>
+    </div>
+    <div class="drawer-nav">
+        <a href="dashboard.html" class="nav-link">Dashboard</a>
+        <a href="pantry.html" class="nav-link active">Dispensa</a>
+        <a href="scanner.html" class="nav-link">Aggiungi prodotto</a>
+        <a href="recipes.html" class="nav-link">Ricette</a>
+        <a href="meals.html"   class="nav-link">Piano pasti</a>
+        <a href="supermercati.html" class="nav-link">Supermercati</a>
+        <a href="gruppo.html"       class="nav-link">Gruppo</a>
+    </div>
+    <div class="drawer-footer">
+        <div class="user-chip">
+            <div class="user-avatar" id="sidebar-avatar">U</div>
+            <span class="user-name" id="sidebar-username">Utente</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="btn-logout">Esci</button>
+    </div>
+</nav>
+<div class="drawer-overlay" id="drawer-overlay"></div>
+
+<div class="app">
+    <header class="topbar">
+        <button class="hamburger" id="hamburger" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+        <h1 class="page-title">Dispensa</h1>
+        <div class="topbar-end">
+            <button class="theme-toggle-app" id="theme-toggle" title="Tema"><span id="theme-icon">🥑</span></button>
+            <a href="scanner.html" class="btn btn-primary btn-sm">+ Aggiungi</a>
+        </div>
+    </header>
+
+    <main class="page-content">
+
+        <!-- Statistiche -->
+        <div class="stats-grid" style="margin-bottom:1.25rem;">
+            <div class="stat-card">
+                <div class="stat-orb green"></div>
+                <div class="stat-info">
+                    <div class="stat-value" id="stat-total">—</div>
+                    <div class="stat-label">Totale prodotti</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-orb amber"></div>
+                <div class="stat-info">
+                    <div class="stat-value" id="stat-expiring">—</div>
+                    <div class="stat-label">In scadenza (7 gg)</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-orb red"></div>
+                <div class="stat-info">
+                    <div class="stat-value" id="stat-expired">—</div>
+                    <div class="stat-label">Scaduti</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toolbar: ricerca + filtri + vista -->
+        <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.9rem; flex-wrap:wrap;">
+            <!-- Ricerca -->
+            <div class="search-box" style="flex:1; min-width:200px;">
+                <input class="form-control" type="text" id="search-input" placeholder="Cerca prodotto…">
+            </div>
+
+            <!-- Scanner shortcut -->
+            <a href="scanner.html" class="btn btn-outline btn-sm">Scansiona</a>
+
+            <!-- View toggle -->
+            <div class="view-toggle" id="view-toggle">
+                <button class="view-btn active" data-view="expiry">
+                    Per scadenza
+                </button>
+                <button class="view-btn" data-view="category">
+                    Per categoria
+                </button>
+            </div>
+        </div>
+
+        <!-- Filtri scadenza (solo in vista "per scadenza") -->
+        <div class="filters" id="expiry-filters">
+            <button class="filter-btn active" data-filter="all">Tutti</button>
+            <button class="filter-btn" data-filter="expiring">In scadenza</button>
+            <button class="filter-btn" data-filter="expired">Scaduti</button>
+            <button class="filter-btn" data-filter="ok">OK</button>
+        </div>
+
+        <!-- Loading -->
+        <div id="list-loader" class="loading">
+            <div class="spinner"></div>
+            <span>Caricamento dispensa…</span>
+        </div>
+
+        <!-- Vista per scadenza -->
+        <div class="pantry-grid" id="pantry-grid" style="display:none;"></div>
+
+        <!-- Vista per categoria -->
+        <div id="category-view" style="display:none;"></div>
+
+    </main>
+    <footer class="site-footer">
+        Progetto scolastico ITTS Vito Volterra
+        <span class="footer-sep">—</span>
+        Realizzato da Morsli &amp; Katia
+    </footer>
+</div>
+
+<!-- ===== MODAL: Modifica prodotto ===== -->
+<div class="modal-overlay" id="modal-edit">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="modal-title">Modifica prodotto</span>
+            <button class="modal-close" onclick="closeModal('modal-edit')">×</button>
+        </div>
+        <div class="modal-body">
+            <form id="form-edit">
+                <div class="form-group">
+                    <label class="form-label" for="edit-name">Nome prodotto *</label>
+                    <input class="form-control" type="text" id="edit-name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="edit-brand">Marca</label>
+                    <input class="form-control" type="text" id="edit-brand">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="edit-category">Categoria *</label>
+                    <select class="form-control" id="edit-category" required>
+                        <option value="">— seleziona categoria —</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="edit-quantity">Quantità *</label>
+                        <input class="form-control" type="number" id="edit-quantity" min="0.1" step="0.1" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="edit-unit">Unità *</label>
+                        <select class="form-control" id="edit-unit">
+                            <option value="pz">pezzi</option>
+                            <option value="g">grammi (g)</option>
+                            <option value="kg">kg</option>
+                            <option value="ml">ml</option>
+                            <option value="l">litri (l)</option>
+                            <option value="conf">confezioni</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="edit-expiry">Data scadenza</label>
+                    <input class="form-control" type="date" id="edit-expiry">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="edit-location">Posizione</label>
+                    <select class="form-control" id="edit-location">
+                        <option value="">— seleziona —</option>
+                        <option value="dispensa">Dispensa</option>
+                        <option value="frigo">Frigo</option>
+                        <option value="freezer">Freezer</option>
+                        <option value="cantina">Cantina</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="edit-notes">Note</label>
+                    <textarea class="form-control" id="edit-notes" rows="2"></textarea>
+                </div>
+                <div class="modal-footer" style="padding:0; border:none; margin-top:1rem;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-edit')">Annulla</button>
+                    <button type="submit" class="btn btn-primary">Salva modifiche</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/pantry.js"></script>
+<script src="js/theme.js"></script>
+</body>
+</html>
